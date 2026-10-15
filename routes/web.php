@@ -101,4 +101,28 @@ Route::middleware(['admin'])->group(function () {
     Route::get('/admin/laporan', [\App\Http\Controllers\AdminLaporanController::class, 'index'])->name('admin.laporan');
     Route::get('/admin/laporan/export-pdf', [\App\Http\Controllers\AdminLaporanController::class, 'exportPdf'])->name('admin.laporan.pdf');
     Route::get('/admin/laporan/export-excel', [\App\Http\Controllers\AdminLaporanController::class, 'exportExcel'])->name('admin.laporan.excel');
+
+    // Kelola Fakultas
+    Route::resource('/admin/fakultas', \App\Http\Controllers\AdminFakultasController::class, [
+        'names' => [
+            'index' => 'admin.fakultas.index',
+            'create' => 'admin.fakultas.create',
+            'store' => 'admin.fakultas.store',
+            'edit' => 'admin.fakultas.edit',
+            'update' => 'admin.fakultas.update',
+            'destroy' => 'admin.fakultas.destroy',
+        ]
+    ]);
+
+    // Kelola Program Studi
+    Route::resource('/admin/program-studi', \App\Http\Controllers\AdminProgramStudiController::class, [
+        'names' => [
+            'index' => 'admin.program-studi.index',
+            'create' => 'admin.program-studi.create',
+            'store' => 'admin.program-studi.store',
+            'edit' => 'admin.program-studi.edit',
+            'update' => 'admin.program-studi.update',
+            'destroy' => 'admin.program-studi.destroy',
+        ]
+    ]);
 });

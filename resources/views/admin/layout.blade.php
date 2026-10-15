@@ -120,6 +120,24 @@
                   <p>Laporan</p>
                 </a>
               </li>
+              <li class="nav-section">
+                <span class="sidebar-mini-icon">
+                  <i class="fa fa-ellipsis-h"></i>
+                </span>
+                <h4 class="text-section">Pengaturan</h4>
+              </li>
+              <li class="nav-item {{ request()->is('admin/fakultas*') ? 'active' : '' }}">
+                <a href="{{ route('admin.fakultas.index') }}">
+                  <i class="fas fa-building"></i>
+                  <p>Kelola Fakultas</p>
+                </a>
+              </li>
+              <li class="nav-item {{ request()->is('admin/program-studi*') ? 'active' : '' }}">
+                <a href="{{ route('admin.program-studi.index') }}">
+                  <i class="fas fa-graduation-cap"></i>
+                  <p>Kelola Program Studi</p>
+                </a>
+              </li>
             </ul>
           </div>
         </div>

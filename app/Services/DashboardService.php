@@ -39,11 +39,19 @@ class DashboardService
         $stats = $this->getAdminDashboardStats();
         
         return array_merge($stats, [
-            'riwayat_terbaru' => $this->getRecentTransactions(),
-            'pending_mahasiswa' => $this->getPendingMembers(),
-            'chart_labels' => $this->getChartLabels(),
-            'chart_data_pinjam' => $this->getChartDataBorrowings(),
-            'chart_data_kembali' => $this->getChartDataReturns(),
+            'totalStaf' => $stats['total_staf'],
+            'bukuDipinjam' => $stats['buku_dipinjam'],
+            'totalBuku' => $stats['total_buku_stok'],
+            'totalJudulBuku' => $stats['total_judul_buku'],
+            'totalAnggota' => $stats['total_anggota'],
+            'pendingVerifikasi' => $stats['pending_verifikasi'],
+            'totalPeminjaman' => $stats['total_peminjaman'],
+            'pengembalianHariIni' => $stats['pengembalian_hari_ini'],
+            'riwayatTerbaru' => $this->getRecentTransactions(),
+            'pendingMahasiswa' => $this->getPendingMembers(),
+            'chartLabels' => $this->getChartLabels(),
+            'chartDataPinjam' => $this->getChartDataBorrowings(),
+            'chartDataKembali' => $this->getChartDataReturns(),
         ]);
     }
 
