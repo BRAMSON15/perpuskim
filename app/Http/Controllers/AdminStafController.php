@@ -4,13 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Staf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use App\Services\StafService;
 
 class AdminStafController extends Controller
 {
+    private $stafService;
+
+    public function __construct(StafService $stafService)
+    {
+        $this->stafService = $stafService;
+    }
+
     public function index()
     {
-        $staf = Staf::where('role', 'staf')->latest()->get();
+        $staf = $this->stafService->getStaf('staf');
         return view('admin.kelolastaf', compact('staf'));
     }
 
@@ -22,14 +29,17 @@ class AdminStafController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        Staf::create([
-            'nama' => $request->nama,
-            'username' => $request->username,
-            'password' => Hash::make($request->password),
-            'role' => 'staf',
-        ]);
+        try {
+            $this->stafService->createStaf([
+                'nama' => $request->nama,
+                'username' => $request->username,
+                'password' => $request->password,
+            ]);
 
-        return redirect()->back()->with('success', 'Akun staf berhasil ditambahkan.');
+            return redirect()->back()->with('success', 'Akun staf berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
     }
 
     public function update(Request $request, string $id)
@@ -42,25 +52,26 @@ class AdminStafController extends Controller
             'password' => 'nullable|string|min:6',
         ]);
 
-        $data = [
-            'nama' => $request->nama,
-            'username' => $request->username,
-        ];
+        try {
+            $this->stafService->updateStaf($id, [
+                'nama' => $request->nama,
+                'username' => $request->username,
+                'password' => $request->password,
+            ]);
 
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
+            return redirect()->back()->with('success', 'Akun staf berhasil diperbarui.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
-
-        $staf->update($data);
-
-        return redirect()->back()->with('success', 'Akun staf berhasil diperbarui.');
     }
 
     public function destroy(string $id)
     {
-        $staf = Staf::findOrFail($id);
-        $staf->delete();
-
-        return redirect()->back()->with('success', 'Akun staf berhasil dihapus.');
+        try {
+            $this->stafService->deleteStaf($id);
+            return redirect()->back()->with('success', 'Akun staf berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
     }
 }

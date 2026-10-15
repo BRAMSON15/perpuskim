@@ -6,37 +6,35 @@ use App\Models\Buku;
 use App\Models\Peminjaman;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
+use App\Services\BukuSearchService;
+use App\Services\PeminjamanService;
 
 class BukuController extends Controller
 {
+    private $bukuSearchService;
+    private $peminjamanService;
+
+    public function __construct(BukuSearchService $bukuSearchService, PeminjamanService $peminjamanService)
+    {
+        $this->bukuSearchService = $bukuSearchService;
+        $this->peminjamanService = $peminjamanService;
+    }
+
     /**
      * Show all books
      */
     public function index(Request $request)
     {
-        $query = Buku::query();
-        
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('judul', 'like', "%{$search}%")
-                  ->orWhere('pengarang', 'like', "%{$search}%");
-            });
-        }
+        $filters = [
+            'search' => $request->search,
+            'fakultas' => $request->fakultas,
+        ];
 
-        if ($request->filled('fakultas')) {
-            $query->where('fakultas', $request->fakultas);
-        }
-
-        $buku = $query->paginate(6)->withQueryString();
+        $buku = $this->bukuSearchService->search($filters);
         $mahasiswa = Auth::guard('mahasiswa')->user();
         
         // Get active borrowings for notification and duration
-        $peminjamanAktif = \App\Models\Peminjaman::with('buku')
-            ->where('mahasiswa_npm', $mahasiswa->npm)
-            ->where('status', 'Dipinjam')
-            ->get();
+        $peminjamanAktif = $this->peminjamanService->getActivePeminjaman($mahasiswa->npm);
 
         return view('mahasiswa.home', compact('buku', 'mahasiswa', 'peminjamanAktif'));
     }
@@ -48,10 +46,7 @@ class BukuController extends Controller
     {
         $mahasiswa = Auth::guard('mahasiswa')->user();
         
-        $peminjamanAktif = \App\Models\Peminjaman::with('buku')
-            ->where('mahasiswa_npm', $mahasiswa->npm)
-            ->where('status', 'Dipinjam')
-            ->get();
+        $peminjamanAktif = $this->peminjamanService->getActivePeminjaman($mahasiswa->npm);
 
         return view('mahasiswa.profil', compact('mahasiswa', 'peminjamanAktif'));
     }
@@ -61,7 +56,7 @@ class BukuController extends Controller
      */
     public function show($id)
     {
-        $buku = Buku::findOrFail($id);
+        $buku = $this->bukuSearchService->getDetail($id);
         return view('buku.detail', compact('buku'));
     }
 
@@ -76,34 +71,12 @@ class BukuController extends Controller
             return response()->json(['success' => false, 'message' => 'Anda harus login sebagai mahasiswa.']);
         }
 
-        $buku = Buku::findOrFail($id);
-
-        if ($buku->stok <= 0) {
-            return response()->json(['success' => false, 'message' => 'Stok buku habis.']);
+        try {
+            $peminjaman = $this->peminjamanService->createPeminjaman($mahasiswa->npm, $id);
+            
+            return response()->json(['success' => true, 'message' => 'Buku berhasil dipinjam!']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        // Cek apakah mahasiswa sudah meminjam buku ini dan belum mengembalikannya
-        $sudahPinjam = Peminjaman::where('mahasiswa_npm', $mahasiswa->npm)
-            ->where('buku_id', $buku->id)
-            ->where('status', 'Dipinjam')
-            ->exists();
-
-        if ($sudahPinjam) {
-            return response()->json(['success' => false, 'message' => 'Anda masih meminjam buku ini dan belum mengembalikannya.']);
-        }
-
-        // Buat peminjaman baru
-        Peminjaman::create([
-            'mahasiswa_npm' => $mahasiswa->npm,
-            'buku_id' => $buku->id,
-            'tanggal_pinjam' => Carbon::today(),
-            'tenggat_waktu' => Carbon::today()->addDays(7),
-            'status' => 'Dipinjam',
-        ]);
-
-        // Kurangi stok
-        $buku->decrement('stok');
-
-        return response()->json(['success' => true, 'message' => 'Buku berhasil dipinjam!']);
     }
 }
